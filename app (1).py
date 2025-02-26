@@ -1,29 +1,37 @@
+import streamlit as st
 import torch
-import gradio as gr
-import torchvision.transforms as transforms
+from ultralytics import YOLO
 from PIL import Image
+import numpy as np
 
-# Load your trained model
-model = torch.load("model.pth", map_location=torch.device("cpu"))
-model.eval()
+# ✅ Load the YOLO model
+@st.cache_resource()
+def load_model():
+    model = YOLO("model.pt")  # Ensure model.pt is in the same directory
+    return model
 
-# Define the transformation
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),  # Resize for model input
-    transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])
-])
+model = load_model()
 
-# Function to make predictions
-def predict(image):
-    image = transform(image).unsqueeze(0)  # Add batch dimension
-    with torch.no_grad():
-        output = model(image)
-        prediction = torch.argmax(output, dim=1).item()  # Get class index
-    return f"Predicted Class: {prediction}"
+# ✅ Streamlit UI
+st.title("🚀 Object Detection with YOLOv5")
+st.write("Upload an image and the model will detect objects!")
 
-# Create Gradio Interface
-iface = gr.Interface(fn=predict, inputs="image", outputs="text")
+# ✅ File uploader
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
 
-# Launch the Gradio app
-iface.launch()
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Uploaded Image", use_column_width=True)
+
+    # ✅ Run YOLO on image
+    results = model(image)
+
+    # ✅ Display detected objects
+    st.write("### Detection Results:")
+    for result in results:
+        for box in result.boxes:
+            st.write(f"Detected: **{model.names[int(box.cls)]}** (Confidence: {box.conf[0]:.2f})")
+
+    # ✅ Show image with detections
+    results[0].show()
+    st.image(results[0].plot(), caption="Detected Objects", use_column_width=True)
