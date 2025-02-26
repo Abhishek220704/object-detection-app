@@ -1,0 +1,16 @@
+pycocotools
+os
+cv2 
+numpy
+matplotlib
+PIL 
+torch 
+ultralytics 
+torchvision
+pyttsx3
+threading
+winsound 
+torch
+torchvision
+gradio
+Pillow
